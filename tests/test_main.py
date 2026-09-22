@@ -31,11 +31,13 @@ DATA_DIR = Path(__file__).resolve().parents[1] / 'data' / 'raw'
 # Each test function loads the relevant CSV file, applies the cleaning or validation function, and asserts that the output meets the expected conditions.
 def test_clean_books_removes_blank_and_duplicate_rows():
 	books = pd.read_csv(DATA_DIR / 'library.csv')
+	duplicate_count_before = int(books.duplicated().sum())
 
 	cleaned = clean_books(books)
 
 	assert len(cleaned) == 21 # Check that the cleaned DataFrame has the expected number of rows after removing blank and duplicate rows.
-	assert not cleaned.duplicated().any() # Check that there are no duplicate rows in the cleaned DataFrame.
+	assert duplicate_count_before > 0 # Check that the source data contains duplicates to clean.
+	assert cleaned.duplicated().sum() == 0 # Check that duplicate rows have been removed.
 	assert cleaned['Id'].dtype == 'Int64' # Check that the 'Id' column in the cleaned DataFrame is of the expected numeric type 'Int64'.
 
 # Test function to verify that the clean_books function correctly normalizes date formats and handles invalid values in the 'Book checkout' and 'Book Returned' columns.
@@ -108,6 +110,22 @@ def test_remove_invalid_records_produces_presentable_books_data():
 	assert cleaned_books.isna().sum().sum() == 0
 	assert not cleaned_books.duplicated().any()
 	assert cleaned_customers.isna().sum().sum() == 0
+
+
+def test_remove_invalid_records_removes_invalid_books():
+	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
+	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
+
+	cleaned_books, _ = remove_invalid_records(
+		books,
+		customers,
+		MAX_CHECKOUT_DATE,
+	)
+
+	book_ids = set(cleaned_books['Id'])
+	assert 17 not in book_ids  # Invalid checkout date.
+	assert 21 not in book_ids  # Missing title and customer ID.
+	assert 7 not in book_ids  # Checkout date exceeds the allowed maximum.
 
 
 def test_output_cleaned_csv_writes_quality_report(tmp_path):
