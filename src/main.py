@@ -11,7 +11,9 @@ import pandas as pd
 # Define the columns that should be treated as dates in the books DataFrame
 DATE_COLUMNS = ['Book checkout', 'Book Returned']
 QUALITY_COLUMNS = ['Issue', 'Book IDs']
+REJECTED_COLUMNS = ['Issue', 'Book IDs']
 SUMMARY_COLUMNS = ['Dataset', 'Metric', 'Before', 'After', 'Change']
+MAX_CHECKOUT_DATE = pd.Timestamp('2023-12-31')
 
 # Functions to clean the books and customers DataFrames, as well as a function to load and clean both datasets. 
 # The cleaning functions remove blank rows, duplicates, normalize date formats, and convert ID columns to numeric types. 
@@ -88,6 +90,26 @@ def validate_data(
 
 	return pd.DataFrame(issues, columns=QUALITY_COLUMNS)
 
+
+def remove_invalid_records(
+	books: pd.DataFrame,
+	customers: pd.DataFrame,
+	maximum_date: pd.Timestamp,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+	"""Remove records that cannot be safely corrected from the source data."""
+	known_customer_ids = customers['Customer ID'].dropna()
+	valid_books = (
+		books['Id'].notna()
+		& books['Books'].notna()
+		& books['Customer ID'].notna()
+		& books['Book checkout'].notna()
+		& books['Book Returned'].notna()
+		& (books['Book checkout'] <= maximum_date)
+		& (books['Book Returned'] >= books['Book checkout'])
+		& books['Customer ID'].isin(known_customer_ids)
+	)
+	return books.loc[valid_books].reset_index(drop=True), customers.copy()
+
 # Function to build a summary of the cleaning impact for both books and customers DataFrames.
 def build_cleaning_summary(
 	raw_books: pd.DataFrame,
@@ -146,6 +168,13 @@ def build_cleaning_summary(
 		invalid_date_count(raw_books, 'Book Returned'),
 		int(cleaned_books['Book Returned'].isna().sum()),
 	)
+	add_metric(
+		rows,
+		'Books',
+		'Rejected invalid rows',
+		0,
+		len(raw_books) - len(cleaned_books),
+	)
 	return pd.DataFrame(rows, columns=SUMMARY_COLUMNS)
 
 # Function to print the cleaning summary in a compact table format, displaying the before-and-after counts for each metric in the cleaning process.
@@ -181,21 +210,48 @@ def load_and_clean_data(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 	customers = pd.read_csv(data_dir / 'library_customers.csv') # Read the customer reference CSV file into a DataFrame named 'customers' from the specified data directory.
 	return clean_books(books), clean_customers(customers)
 
+# Produce a cleaned CSV file for all the data in the raw data directory. The cleaned CSV files are saved in the same directory with a '_cleaned' suffix.
+def output_cleaned_csv(
+	books: pd.DataFrame,
+	customers: pd.DataFrame,
+	quality_issues: pd.DataFrame,
+	data_dir: Path,
+) -> None:
+	"""Output cleaned CSV files in a separate processed-data directory."""
+	processed_dir = data_dir.parent / 'processed'
+	processed_dir.mkdir(parents=True, exist_ok=True)
+	books.to_csv(processed_dir / 'library_cleaned.csv', index=False)
+	customers.to_csv(processed_dir / 'library_customers_cleaned.csv', index=False)
+	quality_issues.to_csv(processed_dir / 'library_quality_issues.csv', index=False)
+
 # Main block to load and clean the data when the script is run directly. It prints information about the cleaned DataFrames.
 
 if __name__ == '__main__':
 	data_directory = Path(__file__).resolve().parents[1] / 'data' / 'raw' # Determine the path to the raw data directory relative to the script's location.
 	raw_books = pd.read_csv(data_directory / 'library.csv')
 	raw_customers = pd.read_csv(data_directory / 'library_customers.csv')
-	books = clean_books(raw_books)
-	customers = clean_customers(raw_customers)
-	quality_issues = validate_data(
-		books,
-		customers,
-		maximum_date=pd.Timestamp('2026-12-31'),
+	cleaned_books = clean_books(raw_books)
+	cleaned_customers = clean_customers(raw_customers)
+	quality_issues = validate_data(cleaned_books, cleaned_customers, MAX_CHECKOUT_DATE)
+	validated_books, validated_customers = remove_invalid_records(
+		cleaned_books,
+		cleaned_customers,
+		MAX_CHECKOUT_DATE,
 	)
-	print(books.info())
-	print(customers.info())
-	print_cleaning_summary(build_cleaning_summary(raw_books, books, raw_customers, customers))
+	output_cleaned_csv(
+		validated_books,
+		validated_customers,
+		quality_issues,
+		data_directory,
+	)
+	print(validated_books.info())
+	print(validated_customers.info())
+	print_cleaning_summary(build_cleaning_summary(
+		raw_books,
+		validated_books,
+		raw_customers,
+		validated_customers,
+	))
 	print('\nData quality issues:')
 	print(quality_issues.to_string(index=False))
+	print(f'\nCleaned files written to {data_directory.parent / "processed"}')

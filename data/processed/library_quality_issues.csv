@@ -1,0 +1,13 @@
+Issue,Book IDs
+Missing book title,21
+Missing customer ID,21
+Invalid checkout date,17
+Checkout date is after the allowed maximum,7
+Return date is before checkout date,2
+Return date is before checkout date,3
+Return date is before checkout date,4
+Return date is before checkout date,5
+Return date is before checkout date,7
+Return date is before checkout date,8
+Customer ID is not in customer reference data,4
+Customer ID is not in customer reference data,19
