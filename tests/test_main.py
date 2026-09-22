@@ -20,17 +20,25 @@ from main import (
 
 DATA_DIR = Path(__file__).resolve().parents[1] / 'data' / 'raw'
 
-# Check that blank rows and duplicate book records are removed.
+# Check that blank rows are removed from the book data.
 def test_clean_books_removes_blank_and_duplicate_rows():
 	books = pd.read_csv(DATA_DIR / 'library.csv')
-	duplicate_count_before = int(books.duplicated().sum())
 
 	cleaned = clean_books(books)
 
 	assert len(cleaned) == 21
-	assert duplicate_count_before > 0
 	assert cleaned.duplicated().sum() == 0
 	assert cleaned['Id'].dtype == 'Int64'
+
+# Check that a duplicate nonblank loan record is removed.
+def test_clean_books_removes_duplicate_loan_records():
+	books = pd.read_csv(DATA_DIR / 'library.csv')
+	books_with_duplicate = pd.concat([books, books.iloc[[0]]], ignore_index=True)
+
+	cleaned = clean_books(books_with_duplicate)
+
+	assert len(cleaned) == 21
+	assert cleaned['Id'].duplicated().sum() == 0
 
 # Check that book dates and loan duration are converted to the expected formats.
 def test_clean_books_normalizes_dates_and_invalid_values():
