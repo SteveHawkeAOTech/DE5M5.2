@@ -82,7 +82,7 @@ def test_build_cleaning_summary_shows_cleaning_impact():
 	cleaned_books = clean_books(raw_books)
 	cleaned_customers = clean_customers(raw_customers)
 
-	summary = build_cleaning_summary(
+	summary = build_cleaning_summary( # Check that the cleaning summary correctly reflects the impact of the cleaning process on both the books and customers DataFrames.
 		raw_books,
 		cleaned_books,
 		raw_customers,
@@ -90,33 +90,33 @@ def test_build_cleaning_summary_shows_cleaning_impact():
 	)
 
 	rows = summary.set_index(['Dataset', 'Metric'])
-	assert tuple(rows.loc[('Books', 'Rows'), ['Before', 'After', 'Change']]) == (114, 21, -93)
-	assert tuple(rows.loc[('Books', 'Fully blank rows'), ['Before', 'After', 'Change']]) == (93, 0, -93)
-	assert tuple(rows.loc[('Books', 'Invalid checkout dates'), ['Before', 'After', 'Change']]) == (1, 1, 0)
-	assert tuple(rows.loc[('Books', 'Rejected invalid rows'), ['Before', 'After', 'Change']]) == (0, 93, 93)
+	assert tuple(rows.loc[('Books', 'Rows'), ['Before', 'After', 'Change']]) == (114, 21, -93) # Check that the summary correctly reports the number of rows in the books DataFrame before and after cleaning, as well as the change in count.
+	assert tuple(rows.loc[('Books', 'Fully blank rows'), ['Before', 'After', 'Change']]) == (93, 0, -93) # Check that the summary correctly reports the number of fully blank rows in the books DataFrame before and after cleaning, as well as the change in count.
+	assert tuple(rows.loc[('Books', 'Invalid checkout dates'), ['Before', 'After', 'Change']]) == (1, 1, 0) # Check that the summary correctly reports the number of invalid checkout dates in the books DataFrame before and after cleaning, as well as the change in count.
+	assert tuple(rows.loc[('Books', 'Rejected invalid rows'), ['Before', 'After', 'Change']]) == (0, 93, 93) # Check that the summary correctly reports the number of rejected invalid rows in the books DataFrame before and after cleaning, as well as the change in count.
 
-
+# Test function to verify that the remove_invalid_records function correctly removes invalid records from the books and customers DataFrames, resulting in cleaned datasets that are free of missing values and duplicates.
 def test_remove_invalid_records_produces_presentable_books_data():
 	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
 	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
 
-	cleaned_books, cleaned_customers = remove_invalid_records(
+	cleaned_books, cleaned_customers = remove_invalid_records( # Check that the remove_invalid_records function correctly removes invalid records from the books and customers DataFrames, resulting in cleaned datasets that are free of missing values and duplicates.
 		books,
 		customers,
 		MAX_CHECKOUT_DATE,
 	)
 
-	assert len(cleaned_books) == 12
-	assert cleaned_books.isna().sum().sum() == 0
-	assert not cleaned_books.duplicated().any()
-	assert cleaned_customers.isna().sum().sum() == 0
+	assert len(cleaned_books) == 12 # Check that the cleaned books DataFrame has the expected number of rows after removing invalid records.
+	assert cleaned_books.isna().sum().sum() == 0 # Check that the cleaned books DataFrame does not contain any missing values.
+	assert not cleaned_books.duplicated().any() # Check that the cleaned books DataFrame does not contain any duplicate rows.
+	assert cleaned_customers.isna().sum().sum() == 0 # Check that the cleaned customers DataFrame does not contain any missing values.
 
-
+# Test function to verify that the remove_invalid_records function correctly removes invalid book records based on the validation rules, ensuring that the cleaned books DataFrame does not contain any records with invalid checkout dates, missing titles, or checkout dates exceeding the allowed maximum.
 def test_remove_invalid_records_removes_invalid_books():
 	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
 	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
 
-	cleaned_books, _ = remove_invalid_records(
+	cleaned_books, _ = remove_invalid_records( # Check that the remove_invalid_records function correctly removes invalid book records based on the validation rules, ensuring that the cleaned books DataFrame does not contain any records with invalid checkout dates, missing titles, or checkout dates exceeding the allowed maximum.
 		books,
 		customers,
 		MAX_CHECKOUT_DATE,
@@ -127,11 +127,11 @@ def test_remove_invalid_records_removes_invalid_books():
 	assert 21 not in book_ids  # Missing title and customer ID.
 	assert 7 not in book_ids  # Checkout date exceeds the allowed maximum.
 
-
+# Test function to verify that the output_cleaned_csv function correctly writes the cleaned books and customers DataFrames, as well as the quality issues DataFrame, to CSV files in the specified output directory.
 def test_output_cleaned_csv_writes_quality_report(tmp_path):
-	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
-	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
-	quality_issues = validate_data(books, customers, MAX_CHECKOUT_DATE)
+	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv')) # Check that the output_cleaned_csv function correctly writes the cleaned books and customers DataFrames, as well as the quality issues DataFrame, to CSV files in the specified output directory.
+	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv')) # Check that the output_cleaned_csv function correctly writes the cleaned books and customers DataFrames, as well as the quality issues DataFrame, to CSV files in the specified output directory.
+	quality_issues = validate_data(books, customers, MAX_CHECKOUT_DATE) # Check that the output_cleaned_csv function correctly writes the cleaned books and customers DataFrames, as well as the quality issues DataFrame, to CSV files in the specified output directory.
 	validated_books, validated_customers = remove_invalid_records(
 		books,
 		customers,
@@ -146,7 +146,7 @@ def test_output_cleaned_csv_writes_quality_report(tmp_path):
 	)
 
 	processed_dir = tmp_path / 'processed'
-	assert (processed_dir / 'library_cleaned.csv').exists()
-	assert (processed_dir / 'library_customers_cleaned.csv').exists()
-	assert (processed_dir / 'library_quality_issues.csv').exists()
+	assert (processed_dir / 'library_cleaned.csv').exists() # Check that the cleaned books CSV file was successfully written to the processed directory.
+	assert (processed_dir / 'library_customers_cleaned.csv').exists() # Check that the cleaned customers CSV file was successfully written to the processed directory.
+	assert (processed_dir / 'library_quality_issues.csv').exists() # Check that the quality issues CSV file was successfully written to the processed directory.
 
