@@ -46,7 +46,7 @@ def test_validate_data_reports_observed_quality_issues():
 	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
 	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
 
-	issues = validate_data(books, customers, pd.Timestamp('2023-12-31'))
+	issues = validate_data(books, customers, pd.Timestamp('2026-12-31'))
 
 	assert set(issues.loc[issues['Issue'] == 'Invalid checkout date', 'Book IDs']) == {17}
 	assert set(issues.loc[issues['Issue'] == 'Missing book title', 'Book IDs']) == {21}
