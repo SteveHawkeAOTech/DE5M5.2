@@ -58,7 +58,12 @@ library-quality-analysis/
 │
 ├── data/
 │   ├── raw/
+│   │   ├── library.csv
+│   │   └── library_customers.csv
 │   └── processed/
+│       ├── library_cleaned.csv
+│       ├── library_customers_cleaned.csv
+│       └── library_quality_issues.csv
 │
 ├── src/
 │   └── main.py
@@ -96,35 +101,62 @@ library-quality-analysis/
 
 ## Data Processing Workflow
 
-The application performs the following steps:
+The application is implemented in `src/main.py` and performs the following steps:
 
-1. Load source data
-2. Validate data quality
-3. Remove duplicate records
-4. Handle missing values
-5. Standardise formats and text values
-6. Export cleaned data
-7. Make output available for reporting
+1. Load the two CSV files from `data/raw/`.
+2. Remove fully blank rows and duplicate records.
+3. Strip unnecessary quotation marks and whitespace from text values.
+4. Convert IDs to nullable integer values.
+5. Convert dates from `DD/MM/YYYY` text to datetime values.
+6. Convert loan periods such as `2 weeks` into an `Allowed days` value.
+7. Detect missing titles, missing customer IDs, invalid dates, future checkout dates, incorrect date order, and unknown customers.
+8. Remove book records that cannot be safely corrected without inventing data.
+9. Write the validated data and quality report to `data/processed/`.
+
+The main functions are:
+
+- `clean_books()` and `clean_customers()` normalise the source data.
+- `validate_data()` creates a report of data-quality issues.
+- `remove_invalid_records()` creates the final presentable datasets.
+- `build_cleaning_summary()` compares the data before and after cleaning.
+- `output_cleaned_csv()` writes the processed CSV files.
+
+The raw files are preserved. Records that are rejected are documented in `library_quality_issues.csv` rather than silently changed.
+
+To run the cleaning script from the project root:
+
+```bash
+python src/main.py
+```
+
+The script creates or updates:
+
+- `data/processed/library_cleaned.csv`
+- `data/processed/library_customers_cleaned.csv`
+- `data/processed/library_quality_issues.csv`
 
 ---
 
 ## Testing
 
-Unit tests will be implemented using Pytest.
+Unit tests are implemented using Pytest in `tests/test_main.py`.
 
 Testing will cover:
 
-- Data loading
-- Duplicate removal
-- Null value handling
-- Data transformation functions
-- Output file creation
+- Removal of empty rows and duplicates
+- Date and loan-period format conversion
+- Detection of data-quality issues
+- Removal of invalid book records
+- Missing-value checks on final data
+- Creation of processed output files
 
 To execute tests:
 
 ```bash
-pytest
+python -m pytest -q
 ```
+
+The current test suite contains eight tests covering the cleaning, validation, summary, record-removal, and output-writing functions.
 
 ---
 
