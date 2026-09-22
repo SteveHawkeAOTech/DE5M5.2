@@ -52,34 +52,37 @@ def clean_books(books: pd.DataFrame) -> pd.DataFrame:
 
 	return cleaned.reset_index(drop=True) # Reset the index of the cleaned DataFrame, dropping the old index and returning a new DataFrame with a default integer index.
 
+# Function to validate the cleaned data for quality issues, returning a DataFrame of observed issues without modifying the cleaned data.
 
 def validate_data(
-	books: pd.DataFrame,
-	customers: pd.DataFrame,
-	maximum_date: pd.Timestamp,
+	books: pd.DataFrame, # The cleaned books DataFrame containing library transaction data.
+	customers: pd.DataFrame, # The cleaned customers DataFrame containing customer reference data.
+	maximum_date: pd.Timestamp, # The maximum allowed date for book checkouts, used to identify any transactions that exceed this limit.
 ) -> pd.DataFrame:
 	"""Return data-quality issues without changing the cleaned data."""
 	issues: list[dict[str, object]] = []
 
+	# Helper function to add quality issues to the issues list based on specific conditions in the books DataFrame. 
+	# It checks for missing values, invalid dates, and other data quality problems, appending relevant information to the issues list.
 	def add_issue(issue: str, rows: pd.Series) -> None:
-		for book_id in books.loc[rows, 'Id'].dropna().tolist():
-			issues.append({'Issue': issue, 'Book IDs': int(book_id)})
+		for book_id in books.loc[rows, 'Id'].dropna().tolist(): # Iterate over the 'Id' values of the books DataFrame where the specified condition (rows) is True, dropping any NaN values and converting the result to a list.
+			issues.append({'Issue': issue, 'Book IDs': int(book_id)}) # Append a dictionary to the issues list containing the issue description and the corresponding book ID, converting the book ID to an integer.
 
-	add_issue('Missing book title', books['Books'].isna())
-	add_issue('Missing customer ID', books['Customer ID'].isna())
-	add_issue('Invalid checkout date', books['Book checkout'].isna())
-	add_issue('Checkout date is after the allowed maximum', books['Book checkout'] > maximum_date)
+	add_issue('Missing book title', books['Books'].isna()) # Check for missing book titles in the 'Books' column of the books DataFrame and add an issue for each occurrence.
+	add_issue('Missing customer ID', books['Customer ID'].isna()) # Check for missing customer IDs in the 'Customer ID' column of the books DataFrame and add an issue for each occurrence.
+	add_issue('Invalid checkout date', books['Book checkout'].isna()) # Check for invalid checkout dates in the 'Book checkout' column of the books DataFrame and add an issue for each occurrence.
+	add_issue('Checkout date is after the allowed maximum', books['Book checkout'] > maximum_date) # Check for checkout dates that exceed the specified maximum date in the 'Book checkout' column of the books DataFrame and add an issue for each occurrence.
 	add_issue(
 		'Return date is before checkout date',
-		books['Book Returned'].notna()
-		& books['Book checkout'].notna()
-		& (books['Book Returned'] < books['Book checkout']),
+		books['Book Returned'].notna() # Check for return dates that are not null in the 'Book Returned' column of the books DataFrame
+		& books['Book checkout'].notna() # Check for checkout dates that are not null in the 'Book checkout' column of the books DataFrame
+		& (books['Book Returned'] < books['Book checkout']), # Check for return dates that are earlier than the corresponding checkout dates in the books DataFrame, indicating a data quality issue.
 	)
 
 	known_customer_ids = customers['Customer ID'].dropna()
 	add_issue(
 		'Customer ID is not in customer reference data',
-		books['Customer ID'].notna() & ~books['Customer ID'].isin(known_customer_ids),
+		books['Customer ID'].notna() & ~books['Customer ID'].isin(known_customer_ids), # Check for customer IDs in the 'Customer ID' column of the books DataFrame that are not null and not present in the known customer IDs from the customers DataFrame, indicating a data quality issue.
 	)
 
 	return pd.DataFrame(issues, columns=QUALITY_COLUMNS)
@@ -107,19 +110,19 @@ def clean_customers(customers: pd.DataFrame) -> pd.DataFrame:
 
 def load_and_clean_data(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 	"""Load both source files and apply the cleaning rules."""
-	books = pd.read_csv(data_dir / 'library.csv')
-	customers = pd.read_csv(data_dir / 'library_customers.csv')
+	books = pd.read_csv(data_dir / 'library.csv') # Read the library transactions CSV file into a DataFrame named 'books' from the specified data directory.
+	customers = pd.read_csv(data_dir / 'library_customers.csv') # Read the customer reference CSV file into a DataFrame named 'customers' from the specified data directory.
 	return clean_books(books), clean_customers(customers)
 
 # Main block to load and clean the data when the script is run directly. It prints information about the cleaned DataFrames.
 
 if __name__ == '__main__':
-	data_directory = Path(__file__).resolve().parents[1] / 'data' / 'raw'
-	books, customers = load_and_clean_data(data_directory)
+	data_directory = Path(__file__).resolve().parents[1] / 'data' / 'raw' # Determine the path to the raw data directory relative to the script's location.
+	books, customers = load_and_clean_data(data_directory) # Load and clean the books and customers datasets from the specified data directory.
 	quality_issues = validate_data(
 		books,
 		customers,
-		maximum_date=pd.Timestamp('2023-12-31'),
+		maximum_date=pd.Timestamp('2026-12-31'),
 	)
 	print(books.info())
 	print(customers.info())
