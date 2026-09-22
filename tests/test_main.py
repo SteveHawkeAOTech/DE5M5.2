@@ -14,7 +14,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 # Import the cleaning and validation functions from the main module for testing.
-from main import clean_books, clean_customers, validate_data
+from main import build_cleaning_summary, clean_books, clean_customers, validate_data
 
 # Define the path to the raw data directory, which contains the CSV files used for testing the cleaning and validation functions.
 DATA_DIR = Path(__file__).resolve().parents[1] / 'data' / 'raw'
@@ -64,4 +64,23 @@ def test_validate_data_reports_observed_quality_issues():
 	assert set(issues.loc[issues['Issue'] == 'Checkout date is after the allowed maximum', 'Book IDs']) == {7} # Check that the 'Checkout date is after the allowed maximum' issue is correctly reported for the book with ID 7.
 	assert set(issues.loc[issues['Issue'] == 'Customer ID is not in customer reference data', 'Book IDs']) == {4, 19} # Check that the 'Customer ID is not in customer reference data' issue is correctly reported for the books with IDs 4 and 19.
 	assert set(issues.loc[issues['Issue'] == 'Return date is before checkout date', 'Book IDs']) == {2, 3, 4, 5, 7, 8} # Check that the 'Return date is before checkout date' issue is correctly reported for the books with IDs 2, 3, 4, 5, 7, and 8.
+
+# Test function to verify that the build_cleaning_summary function correctly summarizes the impact of the cleaning process on both the books and customers DataFrames, including counts before and after cleaning and the change in counts for each metric.
+def test_build_cleaning_summary_shows_cleaning_impact():
+	raw_books = pd.read_csv(DATA_DIR / 'library.csv')
+	raw_customers = pd.read_csv(DATA_DIR / 'library_customers.csv')
+	cleaned_books = clean_books(raw_books)
+	cleaned_customers = clean_customers(raw_customers)
+
+	summary = build_cleaning_summary(
+		raw_books,
+		cleaned_books,
+		raw_customers,
+		cleaned_customers,
+	)
+
+	rows = summary.set_index(['Dataset', 'Metric'])
+	assert tuple(rows.loc[('Books', 'Rows'), ['Before', 'After', 'Change']]) == (114, 21, -93)
+	assert tuple(rows.loc[('Books', 'Fully blank rows'), ['Before', 'After', 'Change']]) == (93, 0, -93)
+	assert tuple(rows.loc[('Books', 'Invalid checkout dates'), ['Before', 'After', 'Change']]) == (1, 1, 0)
 

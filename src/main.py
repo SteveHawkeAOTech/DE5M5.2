@@ -11,6 +11,7 @@ import pandas as pd
 # Define the columns that should be treated as dates in the books DataFrame
 DATE_COLUMNS = ['Book checkout', 'Book Returned']
 QUALITY_COLUMNS = ['Issue', 'Book IDs']
+SUMMARY_COLUMNS = ['Dataset', 'Metric', 'Before', 'After', 'Change']
 
 # Functions to clean the books and customers DataFrames, as well as a function to load and clean both datasets. 
 # The cleaning functions remove blank rows, duplicates, normalize date formats, and convert ID columns to numeric types. 
@@ -87,6 +88,72 @@ def validate_data(
 
 	return pd.DataFrame(issues, columns=QUALITY_COLUMNS)
 
+# Function to build a summary of the cleaning impact for both books and customers DataFrames.
+def build_cleaning_summary(
+	raw_books: pd.DataFrame,
+	cleaned_books: pd.DataFrame,
+	raw_customers: pd.DataFrame,
+	cleaned_customers: pd.DataFrame,
+) -> pd.DataFrame:
+	"""Build a before-and-after summary of the cleaning impact."""
+	def invalid_date_count(data: pd.DataFrame, column: str) -> int: # Helper function to count the number of invalid date entries in a specified column of a DataFrame. It processes the column values, normalizes them, and counts how many cannot be converted to valid dates.
+		values = (
+			data[column]
+			.astype('string')
+			.str.replace('"', '', regex=False)
+			.str.strip()
+		)
+		nonblank_values = values[values.notna() & values.ne('')]
+		return int(pd.to_datetime(nonblank_values, format='%d/%m/%Y', errors='coerce').isna().sum())
+
+	# Helper function to add a metric to the summary rows list, including the dataset name, metric description, counts before and after cleaning, and the change in count.
+	def add_metric(
+		rows: list[dict[str, object]],
+		dataset: str,
+		metric: str,
+		before: int,
+		after: int,
+	) -> None:
+		rows.append({
+			'Dataset': dataset,
+			'Metric': metric,
+			'Before': before,
+			'After': after,
+			'Change': after - before,
+		})
+
+	rows: list[dict[str, object]] = []
+	for dataset, raw, cleaned in [
+		('Books', raw_books, cleaned_books),
+		('Customers', raw_customers, cleaned_customers),
+	]:
+		add_metric(rows, dataset, 'Rows', len(raw), len(cleaned))
+		add_metric(rows, dataset, 'Fully blank rows', int(raw.isna().all(axis=1).sum()), 0)
+		add_metric(rows, dataset, 'Duplicate rows', int(raw.duplicated().sum()), int(cleaned.duplicated().sum()))
+		add_metric(rows, dataset, 'Missing cells', int(raw.isna().sum().sum()), int(cleaned.isna().sum().sum()))
+
+	add_metric(
+		rows,
+		'Books',
+		'Invalid checkout dates',
+		invalid_date_count(raw_books, 'Book checkout'),
+		int(cleaned_books['Book checkout'].isna().sum()),
+	)
+	add_metric(
+		rows,
+		'Books',
+		'Invalid return dates',
+		invalid_date_count(raw_books, 'Book Returned'),
+		int(cleaned_books['Book Returned'].isna().sum()),
+	)
+	return pd.DataFrame(rows, columns=SUMMARY_COLUMNS)
+
+# Function to print the cleaning summary in a compact table format, displaying the before-and-after counts for each metric in the cleaning process.
+def print_cleaning_summary(summary: pd.DataFrame) -> None:
+	"""Print the cleaning impact in a compact table."""
+	print('\nCleaning impact summary:')
+	print(summary.to_string(index=False))
+
 # Function to clean the customer reference data
 # Follows a similar approach to clean_books, removing blank rows and duplicates, 
 # normalizing the 'Customer Name' column, and converting 'Customer ID' to numeric type.
@@ -118,7 +185,10 @@ def load_and_clean_data(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 if __name__ == '__main__':
 	data_directory = Path(__file__).resolve().parents[1] / 'data' / 'raw' # Determine the path to the raw data directory relative to the script's location.
-	books, customers = load_and_clean_data(data_directory) # Load and clean the books and customers datasets from the specified data directory.
+	raw_books = pd.read_csv(data_directory / 'library.csv')
+	raw_customers = pd.read_csv(data_directory / 'library_customers.csv')
+	books = clean_books(raw_books)
+	customers = clean_customers(raw_customers)
 	quality_issues = validate_data(
 		books,
 		customers,
@@ -126,4 +196,6 @@ if __name__ == '__main__':
 	)
 	print(books.info())
 	print(customers.info())
+	print_cleaning_summary(build_cleaning_summary(raw_books, books, raw_customers, customers))
+	print('\nData quality issues:')
 	print(quality_issues.to_string(index=False))
