@@ -14,7 +14,15 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
 
 # Import the cleaning and validation functions from the main module for testing.
-from main import build_cleaning_summary, clean_books, clean_customers, validate_data
+from main import (
+	MAX_CHECKOUT_DATE,
+	build_cleaning_summary,
+	clean_books,
+	clean_customers,
+	output_cleaned_csv,
+	remove_invalid_records,
+	validate_data,
+)
 
 # Define the path to the raw data directory, which contains the CSV files used for testing the cleaning and validation functions.
 DATA_DIR = Path(__file__).resolve().parents[1] / 'data' / 'raw'
@@ -83,4 +91,44 @@ def test_build_cleaning_summary_shows_cleaning_impact():
 	assert tuple(rows.loc[('Books', 'Rows'), ['Before', 'After', 'Change']]) == (114, 21, -93)
 	assert tuple(rows.loc[('Books', 'Fully blank rows'), ['Before', 'After', 'Change']]) == (93, 0, -93)
 	assert tuple(rows.loc[('Books', 'Invalid checkout dates'), ['Before', 'After', 'Change']]) == (1, 1, 0)
+	assert tuple(rows.loc[('Books', 'Rejected invalid rows'), ['Before', 'After', 'Change']]) == (0, 93, 93)
+
+
+def test_remove_invalid_records_produces_presentable_books_data():
+	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
+	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
+
+	cleaned_books, cleaned_customers = remove_invalid_records(
+		books,
+		customers,
+		MAX_CHECKOUT_DATE,
+	)
+
+	assert len(cleaned_books) == 12
+	assert cleaned_books.isna().sum().sum() == 0
+	assert not cleaned_books.duplicated().any()
+	assert cleaned_customers.isna().sum().sum() == 0
+
+
+def test_output_cleaned_csv_writes_quality_report(tmp_path):
+	books = clean_books(pd.read_csv(DATA_DIR / 'library.csv'))
+	customers = clean_customers(pd.read_csv(DATA_DIR / 'library_customers.csv'))
+	quality_issues = validate_data(books, customers, MAX_CHECKOUT_DATE)
+	validated_books, validated_customers = remove_invalid_records(
+		books,
+		customers,
+		MAX_CHECKOUT_DATE,
+	)
+
+	output_cleaned_csv(
+		validated_books,
+		validated_customers,
+		quality_issues,
+		tmp_path / 'raw',
+	)
+
+	processed_dir = tmp_path / 'processed'
+	assert (processed_dir / 'library_cleaned.csv').exists()
+	assert (processed_dir / 'library_customers_cleaned.csv').exists()
+	assert (processed_dir / 'library_quality_issues.csv').exists()
 
