@@ -22,7 +22,7 @@ stages: # The stages section defines the two stages of the pipeline: Test and Cl
   - job: RunTests # The RunTests job runs the unit tests using pytest.
     displayName: Install dependencies and run pytest
     steps:
-    - checkout: self
+    - checkout: self # The checkout step checks out the source code from the repository, making it available for the subsequent steps in the job.
 
     - task: UsePythonVersion@0 # The UsePythonVersion task sets up the specified Python version for the job.
       inputs:
@@ -45,7 +45,7 @@ stages: # The stages section defines the two stages of the pipeline: Test and Cl
   - job: RunCleaner # The RunCleaner job runs the data-cleaning application and publishes the processed data as a pipeline artifact.
     displayName: Run the data-cleaning application
     steps:
-    - checkout: self
+    - checkout: self # The checkout step checks out the source code from the repository, making it available for the subsequent steps in the job.
 
     - task: UsePythonVersion@0
       inputs:
