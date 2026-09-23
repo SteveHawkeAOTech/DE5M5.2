@@ -39,7 +39,6 @@ jobs:
           path: data/processed/
 
       - name: Build Docker image
-        needs: test-clean-and-build
         run: |
           docker build . \
             --file Dockerfile \
