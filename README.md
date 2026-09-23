@@ -158,7 +158,7 @@ To execute tests:
 python -m pytest -q
 ```
 
-The current test suite contains eight tests covering the cleaning, validation, summary, record-removal, and output-writing functions.
+The current test suite contains nine tests covering the cleaning, validation, summary, record-removal, duplicate-handling, and output-writing functions.
 
 ---
 
