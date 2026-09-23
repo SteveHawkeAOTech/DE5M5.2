@@ -185,6 +185,12 @@ The continuous delivery pipeline is defined in `pipeline/continuous_delivery.yam
 
 The `Library-Production` environment must be created in Azure DevOps. It can later be configured with approval checks before the deployment is allowed to run. The current deployment confirms the artifact contents; a future database task can be added to the deployment steps when a database service has been selected.
 
+### GitHub Actions Workflow
+
+The GitHub Actions workflow is defined in `pipeline/git.yaml`. GitHub runs it when code is pushed to `main`, when a pull request targets `main`, or when it is started manually from the Actions tab.
+
+The workflow uses an Ubuntu runner, installs Python 3.13 and the dependencies in `requirements.txt`, runs the nine pytest tests, executes `src/main.py`, and uploads `data/processed/` as the `processed-library-data` artifact.
+
 ---
 
 ## Security Considerations
