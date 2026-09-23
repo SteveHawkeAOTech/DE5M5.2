@@ -77,7 +77,8 @@ library-quality-analysis/
 │   ├── security.md
 │   └── kanban_screenshots/
 │
-├── pipelines/
+├── pipeline/
+│   └── first_pipeline.yaml
 │
 ├── requirements.txt
 │
@@ -162,13 +163,16 @@ The current test suite contains eight tests covering the cleaning, validation, s
 
 ## CI/CD Pipeline
 
-The Azure DevOps pipeline will:
+The Azure DevOps pipeline is defined in `pipeline/first_pipeline.yaml`. It runs when changes are pushed to `main` or when a pull request targets `main`.
 
-1. Retrieve source code from GitHub
-2. Install project dependencies
-3. Execute automated tests
-4. Run the data transformation process
-5. Publish results
+The pipeline contains two stages:
+
+1. **Test**: select Python 3.13, install dependencies, and run the Pytest suite.
+2. **CleanData**: run `src/main.py` to create and publish the processed CSV files.
+
+The pipeline uses an `ubuntu-latest` Microsoft-hosted agent. The `Test` stage must succeed before `CleanData` runs, and the processed data is published from the same job that creates it.
+
+The current pipeline publishes the processed data as an Azure DevOps artifact. Loading the data into a database is a separate Exercise 5 step and would require a database service, credentials, and an additional deployment script or pipeline task.
 
 ---
 
