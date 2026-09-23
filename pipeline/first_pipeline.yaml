@@ -1,27 +1,30 @@
 # Azure DevOps pipeline for the library data-cleaning application.
+# The pipeline consists of two stages: Test and CleanData.
+# The Test stage runs unit tests using pytest, while the CleanData stage runs the data-cleaning application and publishes the processed data as a pipeline artifact.
 
+# The trigger section specifies that the pipeline should be triggered on changes to the main branch.
 trigger:
 - main
 
-pr:
+pr: # The pr section specifies that the pipeline should be triggered on pull requests targeting the main branch.
 - main
 
-pool:
+pool: # The pool section specifies the virtual machine image to be used for the pipeline.
   vmImage: 'ubuntu-latest'
 
-variables:
+variables: # The variables section defines a variable for the Python version to be used in the pipeline.
   pythonVersion: '3.13'
 
-stages:
-- stage: Test
+stages: # The stages section defines the two stages of the pipeline: Test and CleanData.
+- stage: Test # The Test stage runs unit tests using pytest.
   displayName: Run tests
   jobs:
-  - job: RunTests
+  - job: RunTests # The RunTests job runs the unit tests using pytest.
     displayName: Install dependencies and run pytest
     steps:
     - checkout: self
 
-    - task: UsePythonVersion@0
+    - task: UsePythonVersion@0 # The UsePythonVersion task sets up the specified Python version for the job.
       inputs:
         versionSpec: '$(pythonVersion)'
       displayName: Use Python $(pythonVersion)
@@ -34,12 +37,12 @@ stages:
     - script: python -m pytest -q
       displayName: Run unit tests
 
-- stage: CleanData
+- stage: CleanData # The CleanData stage runs the data-cleaning application and publishes the processed data as a pipeline artifact.
   displayName: Clean library data
-  dependsOn: Test
+  dependsOn: Test # The CleanData stage depends on the Test stage, meaning it will only run if the Test stage succeeds.
   condition: succeeded()
   jobs:
-  - job: RunCleaner
+  - job: RunCleaner # The RunCleaner job runs the data-cleaning application and publishes the processed data as a pipeline artifact.
     displayName: Run the data-cleaning application
     steps:
     - checkout: self
@@ -54,10 +57,10 @@ stages:
         python -m pip install -r requirements.txt
       displayName: Install dependencies
 
-    - script: python src/main.py
+    - script: python src/main.py # The script step runs the main.py script located in the src directory, which is responsible for cleaning and validating the library data.
       displayName: Clean and validate library data
 
-    - task: PublishPipelineArtifact@1
+    - task: PublishPipelineArtifact@1 # The PublishPipelineArtifact task publishes the processed data as a pipeline artifact, making it available for download or use in subsequent stages of the pipeline.
       inputs:
         targetPath: '$(Build.SourcesDirectory)/data/processed'
         artifact: 'processed-library-data'
