@@ -190,7 +190,16 @@ docker build . --file Dockerfile --tag library-quality-analysis:local
 docker run --rm library-quality-analysis:local
 ```
 
-The Docker workflow in `.github/workflows/docker-image.yml` performs the same steps in GitHub Actions and uploads the processed data as an artifact. The application currently requires no secrets or environment variables. If a database or external service is added later, credentials should be passed through GitHub Actions secrets rather than stored in the image or workflow file.
+The Docker workflow in `.github/workflows/docker-image.yml` performs the same steps in GitHub Actions. On pushes to `main`, it publishes the image to GitHub Container Registry with both the commit SHA and `latest` tags. Pull requests build and test the image but do not publish it. The application currently requires no secrets or environment variables; the workflow uses GitHub's built-in `GITHUB_TOKEN` for registry authentication.
+
+After the workflow completes, pull the latest published image with:
+
+```bash
+docker pull ghcr.io/<github-owner>/<repository>:latest
+docker run --rm ghcr.io/<github-owner>/<repository>:latest
+```
+
+Replace `<github-owner>/<repository>` with the GitHub repository path, for example `octocat/library-quality-analysis`.
 
 ---
 

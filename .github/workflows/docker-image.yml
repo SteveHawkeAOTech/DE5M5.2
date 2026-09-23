@@ -1,4 +1,4 @@
-name: Library data CI and Docker Build
+name: Library data CI and Docker Publish
 
 on:
   push:
@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
   
 jobs:
   test-clean-and-build:
@@ -40,9 +44,26 @@ jobs:
 
       - name: Build Docker image
         run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
           docker build . \
             --file Dockerfile \
-            --tag library-quality-analysis:${{ github.sha }}
+            --tag library-quality-analysis:${{ github.sha }} \
+            --tag "ghcr.io/${GITHUB_REPOSITORY,,}:${{ github.sha }}" \
+            --tag "ghcr.io/${GITHUB_REPOSITORY,,}:latest"
 
       - name: Run Docker image tests and application
         run: docker run --rm library-quality-analysis:${{ github.sha }}
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "$IMAGE_NAME:${{ github.sha }}"
+          docker push "$IMAGE_NAME:latest"
