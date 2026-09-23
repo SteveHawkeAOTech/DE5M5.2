@@ -11,8 +11,7 @@ This project loads library transaction and customer data from CSV files, cleans 
 - `src/main.py`: cleaning, validation, summary, and output process.
 - `tests/test_main.py`: pytest unit tests.
 - `data/processed/`: generated cleaned data and quality report.
-- `pipeline/continuous_integration.yaml`: test and data-processing pipeline.
-- `pipeline/continuous_delivery.yaml`: test, data-build, and artifact-deployment pipeline.
+- `.github/workflows/library-data.yml`: GitHub Actions test, data-processing, and artifact workflow.
 
 ## Processing Flow
 
@@ -52,11 +51,7 @@ Raw files are not overwritten.
 
 ## CI/CD Architecture
 
-Both Azure DevOps pipelines use an `ubuntu-latest` Microsoft-hosted agent and Python 3.13.
+The GitHub Actions workflow uses an `ubuntu-latest` hosted runner and Python 3.13. It runs the tests, executes `src/main.py`, and uploads the processed directory as the `processed-library-data` artifact.
 
-The continuous integration pipeline runs tests, executes `src/main.py`, and publishes the processed directory as an artifact.
-
-The continuous delivery pipeline runs a test stage, builds the processed data, publishes the artifact, and then uses a `deployment` job with the `Library-Production` environment and a `runOnce` strategy to download and confirm the artifact.
-
-The current deployment target is an Azure DevOps pipeline artifact. A database or data lake destination has not yet been implemented.
+The current delivery target is a GitHub Actions artifact. A database or data lake destination has not yet been implemented.
 

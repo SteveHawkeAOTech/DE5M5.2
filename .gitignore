@@ -217,7 +217,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local Azure DevOps self-hosted agent files accidentally created under tests
+# Local self-hosted CI agent files accidentally created under tests
 /tests/bin/
 /tests/externals/
 /tests/_diag/

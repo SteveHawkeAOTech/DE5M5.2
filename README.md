@@ -4,7 +4,7 @@
 
 This project has been developed as part of the QA Data Engineering Product Development course.
 
-The aim is to automate a library's quality analysis process by extracting, cleaning, transforming, and preparing data for reporting. The solution uses Python for data processing, GitHub for source control, Azure DevOps for Agile planning and CI/CD automation, and Power BI for visualisation.
+The aim is to automate a library's quality analysis process by extracting, cleaning, transforming, and preparing data for reporting. The solution uses Python for data processing, GitHub for source control and CI/CD automation, and Power BI for visualisation.
 
 ## Business Problem
 
@@ -25,7 +25,7 @@ The objective of this project is to create an automated, repeatable process that
 - Store source code in a GitHub repository
 - Clean and transform raw data using Python
 - Implement automated unit testing
-- Develop a CI/CD pipeline using Azure DevOps
+- Develop a CI/CD workflow using GitHub Actions
 - Document architecture, testing, and security practices
 - Prepare transformed data for reporting and visualisation
 
@@ -77,9 +77,9 @@ library-quality-analysis/
 │   ├── security.md
 │   └── kanban_screenshots/
 │
-├── pipeline/
-│   ├── first_pipeline.yaml
-│   └── continuous_delivery.yaml
+├── .github/
+│   └── workflows/
+│       └── library-data.yml
 │
 ├── requirements.txt
 │
@@ -96,7 +96,7 @@ library-quality-analysis/
 | Pandas | Data manipulation |
 | Pytest | Unit testing |
 | GitHub | Version control |
-| Azure DevOps | Agile planning and CI/CD |
+| GitHub Actions | Continuous integration and delivery |
 | Power BI | Reporting and visualisation |
 
 ---
@@ -162,34 +162,15 @@ The current test suite contains nine tests covering the cleaning, validation, su
 
 ---
 
-## CI/CD Pipelines
+## GitHub Actions CI/CD
 
-The standard CI pipeline is defined in `pipeline/first_pipeline.yaml`. It runs when changes are pushed to `main` or when a pull request targets `main`.
-
-The pipeline contains two stages:
-
-1. **Test**: select Python 3.13, install dependencies, and run the Pytest suite.
-2. **CleanData**: run `src/main.py` to create and publish the processed CSV files.
-
-The pipeline uses an `ubuntu-latest` Microsoft-hosted agent. The `Test` stage must succeed before `CleanData` runs, and the processed data is published from the same job that creates it.
-
-The current CI pipeline publishes the processed data as an Azure DevOps artifact. Loading the data into a database is a separate Exercise 5 step and would require a database service, credentials, and an additional deployment script or pipeline task.
-
-### Continuous Delivery Pipeline
-
-The continuous delivery pipeline is defined in `pipeline/continuous_delivery.yaml`. It runs when changes are pushed to `main` and contains three stages:
-
-1. **Test**: install dependencies and run the Pytest suite.
-2. **BuildData**: run `src/main.py` and publish the processed CSV files as a pipeline artifact.
-3. **Deploy**: download the artifact and deploy it to the `Library-Production` Azure DevOps environment using a `runOnce` deployment strategy.
-
-The `Library-Production` environment must be created in Azure DevOps. It can later be configured with approval checks before the deployment is allowed to run. The current deployment confirms the artifact contents; a future database task can be added to the deployment steps when a database service has been selected.
-
-### GitHub Actions Workflow
-
-The GitHub Actions workflow is defined in `pipeline/git.yaml`. GitHub runs it when code is pushed to `main`, when a pull request targets `main`, or when it is started manually from the Actions tab.
+The workflow is defined in `.github/workflows/library-data.yml`. GitHub runs it when code is pushed to `main`, when a pull request targets `main`, or when it is started manually from the Actions tab.
 
 The workflow uses an Ubuntu runner, installs Python 3.13 and the dependencies in `requirements.txt`, runs the nine pytest tests, executes `src/main.py`, and uploads `data/processed/` as the `processed-library-data` artifact.
+
+The workflow provides continuous integration by testing every change and continuous delivery by publishing the processed data artifact after the tests and cleaning process succeed.
+
+The project does not currently load data into a database or data lake. That would require a selected service, credentials, and an additional upload step.
 
 ---
 
@@ -212,7 +193,7 @@ The following security practices are applied:
 - GitHub Repository
 - Python Data Transformation Application
 - Unit Testing Suite
-- Azure DevOps CI/CD Pipeline
+- GitHub Actions CI/CD Workflow
 - Architecture Documentation
 - Security Review
 - Power BI Dashboard

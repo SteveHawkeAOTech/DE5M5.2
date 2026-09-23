@@ -38,7 +38,7 @@ The tests call individual functions with pandas DataFrames and assert their resu
 
 ### Pipeline Tests
 
-Both Azure DevOps pipelines install the dependencies and run:
+The GitHub Actions workflow installs the dependencies and runs:
 
 ```bash
 python -m pytest -q
