@@ -79,7 +79,10 @@ library-quality-analysis/
 │
 ├── .github/
 │   └── workflows/
-│       └── library-data.yml
+│       ├── library-data.yml
+│       └── docker-image.yml
+│
+├── Dockerfile
 │
 ├── requirements.txt
 │
@@ -171,6 +174,23 @@ The workflow uses an Ubuntu runner, installs Python 3.13 and the dependencies in
 The workflow provides continuous integration by testing every change and continuous delivery by publishing the processed data artifact after the tests and cleaning process succeed.
 
 The project does not currently load data into a database or data lake. That would require a selected service, credentials, and an additional upload step.
+
+### Docker
+
+The `Dockerfile` uses Python 3.13, installs the packages in `requirements.txt` (`pandas` and `pytest`), copies the application, tests, and raw data, and runs the tests before the application:
+
+```text
+pytest -> src/main.py
+```
+
+Build and run the image from the project root:
+
+```bash
+docker build . --file Dockerfile --tag library-quality-analysis:local
+docker run --rm library-quality-analysis:local
+```
+
+The Docker workflow in `.github/workflows/docker-image.yml` performs the same steps in GitHub Actions and uploads the processed data as an artifact. The application currently requires no secrets or environment variables. If a database or external service is added later, credentials should be passed through GitHub Actions secrets rather than stored in the image or workflow file.
 
 ---
 

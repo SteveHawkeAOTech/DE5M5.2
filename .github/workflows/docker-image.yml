@@ -43,3 +43,6 @@ jobs:
           docker build . \
             --file Dockerfile \
             --tag library-quality-analysis:${{ github.sha }}
+
+      - name: Run Docker image tests and application
+        run: docker run --rm library-quality-analysis:${{ github.sha }}

@@ -12,6 +12,8 @@ This project loads library transaction and customer data from CSV files, cleans 
 - `tests/test_main.py`: pytest unit tests.
 - `data/processed/`: generated cleaned data and quality report.
 - `.github/workflows/library-data.yml`: GitHub Actions test, data-processing, and artifact workflow.
+- `.github/workflows/docker-image.yml`: GitHub Actions Docker build and run workflow.
+- `Dockerfile`: container definition for the application.
 
 ## Processing Flow
 
@@ -54,4 +56,8 @@ Raw files are not overwritten.
 The GitHub Actions workflow uses an `ubuntu-latest` hosted runner and Python 3.13. It runs the tests, executes `src/main.py`, and uploads the processed directory as the `processed-library-data` artifact.
 
 The current delivery target is a GitHub Actions artifact. A database or data lake destination has not yet been implemented.
+
+## Docker Architecture
+
+The Docker image is based on Python 3.13, installs the dependencies from `requirements.txt`, and runs as a non-root `app` user. It copies the source code, tests, and raw data into the image. The container command runs `pytest` first and runs `src/main.py` only when the tests pass.
 

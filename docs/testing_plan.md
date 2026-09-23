@@ -50,6 +50,8 @@ The data-cleaning stage then runs:
 python src/main.py
 ```
 
+The Docker workflow also builds the image and runs the container. The Dockerfile executes `python -m pytest -q && python src/main.py`, so the application is not started if the container tests fail.
+
 ## Expected Result
 
 All tests should pass before processed data is published. If a test fails, the cleaning or delivery stage should not be treated as successful.
