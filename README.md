@@ -78,7 +78,8 @@ library-quality-analysis/
 │   └── kanban_screenshots/
 │
 ├── pipeline/
-│   └── first_pipeline.yaml
+│   ├── first_pipeline.yaml
+│   └── continuous_delivery.yaml
 │
 ├── requirements.txt
 │
@@ -161,9 +162,9 @@ The current test suite contains eight tests covering the cleaning, validation, s
 
 ---
 
-## CI/CD Pipeline
+## CI/CD Pipelines
 
-The Azure DevOps pipeline is defined in `pipeline/first_pipeline.yaml`. It runs when changes are pushed to `main` or when a pull request targets `main`.
+The standard CI pipeline is defined in `pipeline/first_pipeline.yaml`. It runs when changes are pushed to `main` or when a pull request targets `main`.
 
 The pipeline contains two stages:
 
@@ -172,7 +173,17 @@ The pipeline contains two stages:
 
 The pipeline uses an `ubuntu-latest` Microsoft-hosted agent. The `Test` stage must succeed before `CleanData` runs, and the processed data is published from the same job that creates it.
 
-The current pipeline publishes the processed data as an Azure DevOps artifact. Loading the data into a database is a separate Exercise 5 step and would require a database service, credentials, and an additional deployment script or pipeline task.
+The current CI pipeline publishes the processed data as an Azure DevOps artifact. Loading the data into a database is a separate Exercise 5 step and would require a database service, credentials, and an additional deployment script or pipeline task.
+
+### Continuous Delivery Pipeline
+
+The continuous delivery pipeline is defined in `pipeline/continuous_delivery.yaml`. It runs when changes are pushed to `main` and contains three stages:
+
+1. **Test**: install dependencies and run the Pytest suite.
+2. **BuildData**: run `src/main.py` and publish the processed CSV files as a pipeline artifact.
+3. **Deploy**: download the artifact and deploy it to the `Library-Production` Azure DevOps environment using a `runOnce` deployment strategy.
+
+The `Library-Production` environment must be created in Azure DevOps. It can later be configured with approval checks before the deployment is allowed to run. The current deployment confirms the artifact contents; a future database task can be added to the deployment steps when a database service has been selected.
 
 ---
 
