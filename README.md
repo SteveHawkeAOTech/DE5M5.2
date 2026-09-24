@@ -146,7 +146,19 @@ The script creates or updates:
 
 Unit tests are implemented using Pytest in `tests/test_main.py`.
 
-Testing will cover:
+The nine tests are:
+
+1. `test_clean_books_removes_blank_and_duplicate_rows()` removes blank and duplicate book rows and converts book IDs to nullable integers.
+2. `test_clean_books_removes_duplicate_loan_records()` removes duplicate loan records.
+3. `test_clean_books_normalizes_dates_and_invalid_values()` converts dates and loan periods and handles invalid dates.
+4. `test_clean_customers_removes_blank_rows_and_converts_ids()` removes blank customer rows and converts customer IDs to nullable integers.
+5. `test_validate_data_reports_observed_quality_issues()` reports the expected data-quality issues and affected book IDs.
+6. `test_build_cleaning_summary_shows_cleaning_impact()` verifies the before-and-after cleaning summary.
+7. `test_remove_invalid_records_produces_presentable_books_data()` verifies that final book data has no missing values or duplicates.
+8. `test_remove_invalid_records_removes_invalid_books()` excludes book records that fail validation.
+9. `test_output_cleaned_csv_writes_quality_report()` verifies that all expected processed CSV files are created.
+
+The test coverage includes:
 
 - Removal of empty rows and duplicates
 - Date and loan-period format conversion
