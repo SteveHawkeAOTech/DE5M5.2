@@ -9,6 +9,7 @@ QUALITY_COLUMNS = ['Issue', 'Book IDs']
 SUMMARY_COLUMNS = ['Dataset', 'Metric', 'Before', 'After', 'Change']
 MAX_CHECKOUT_DATE = pd.Timestamp('2023-12-31')
 
+# Function to clean the library transactions data
 def clean_books(books: pd.DataFrame) -> pd.DataFrame:
     """Return a cleaned copy of the library transactions."""
     print(f'Cleaning {len(books)} rows of library transactions...')
@@ -47,6 +48,7 @@ def clean_books(books: pd.DataFrame) -> pd.DataFrame:
 
     return cleaned.reset_index(drop=True)
 
+# Function to validate the cleaned data and identify quality issues
 def validate_data(
     books: pd.DataFrame,
     customers: pd.DataFrame,
@@ -82,7 +84,7 @@ def validate_data(
 
     return pd.DataFrame(issues, columns=QUALITY_COLUMNS)
 
-
+# Function to remove records that cannot be safely corrected from the source data
 def remove_invalid_records(
     books: pd.DataFrame,
     customers: pd.DataFrame,
@@ -102,6 +104,7 @@ def remove_invalid_records(
     )
     return books.loc[valid_books].reset_index(drop=True), customers.copy()
 
+# Function to build a summary of the cleaning impact
 def build_cleaning_summary(
     raw_books: pd.DataFrame,
     cleaned_books: pd.DataFrame,
@@ -190,11 +193,13 @@ def build_cleaning_summary(
     )
     return pd.DataFrame(rows, columns=SUMMARY_COLUMNS)
 
+# Function to print the cleaning summary in a compact table
 def print_cleaning_summary(summary: pd.DataFrame) -> None:
     """Print the cleaning impact in a compact table."""
     print('\nCleaning impact summary:')
     print(summary.to_string(index=False))
 
+# Function to clean the customer reference data
 def clean_customers(customers: pd.DataFrame) -> pd.DataFrame:
     """Return a cleaned copy of the customer reference data."""
     print(f'Cleaning {len(customers)} rows of customer data...')
@@ -211,13 +216,14 @@ def clean_customers(customers: pd.DataFrame) -> pd.DataFrame:
 
     return cleaned.reset_index(drop=True)
 
-
+# Function to load and clean both source files
 def load_and_clean_data(data_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Load both source files and apply the cleaning rules."""
     books = pd.read_csv(data_dir / 'library.csv')
     customers = pd.read_csv(data_dir / 'library_customers.csv')
     return clean_books(books), clean_customers(customers)
 
+# Function to write the cleaned data and quality report to the processed folder
 def output_cleaned_csv(
     books: pd.DataFrame,
     customers: pd.DataFrame,

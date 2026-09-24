@@ -19,7 +19,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code and data
+# Copy all data
 COPY --chown=app:app src ./src
 COPY --chown=app:app tests ./tests
 COPY --chown=app:app data/raw ./data/raw
